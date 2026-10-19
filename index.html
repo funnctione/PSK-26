@@ -30,25 +30,25 @@
 
     <section class="metrics" aria-label="Data sensor">
       <article class="metric-card">
-        <span class="metric-label">Suhu</span>
+        <span class="metric-label"><span class="icon icon-temperature" aria-hidden="true">♨️</span> Suhu</span>
         <strong id="temperature" class="metric-value">--.-<small>°C</small></strong>
         <span class="metric-note">Sensor DHT22</span>
       </article>
 
       <article class="metric-card">
-        <span class="metric-label">Kelembapan</span>
+        <span class="metric-label"><span class="icon icon-humidity" aria-hidden="true">❄️</span> Kelembapan</span>
         <strong id="humidity" class="metric-value">--<small>%</small></strong>
         <span class="metric-note">Sensor DHT22</span>
       </article>
 
       <article class="metric-card">
-        <span class="metric-label">Total masuk RFID</span>
+        <span class="metric-label"><span class="icon icon-rfid" aria-hidden="true">🪪</span> Total masuk RFID</span>
         <strong id="rfidCount" class="metric-value">0</strong>
         <span id="lastRfid" class="metric-note">Akses masuk</span>
       </article>
 
       <article class="metric-card">
-        <span class="metric-label">Total keluar Touch</span>
+        <span class="metric-label"><span class="icon icon-touch" aria-hidden="true">🫆</span> Total keluar Touch</span>
         <strong id="touchCount" class="metric-value">0</strong>
         <span class="metric-note">Akses keluar</span>
       </article>
@@ -95,14 +95,14 @@
         <section class="panel">
           <div class="panel-heading">
             <div>
-              <h2>Kontrol Kipas</h2>
+              <h2><span class="icon icon-fan" aria-hidden="true">🌀</span> Kontrol Kipas</h2>
               <p>Kontrol manual melalui ESP32</p>
             </div>
           </div>
 
           <div class="device-row">
             <div>
-              <span class="device-label">Status kipas</span>
+              <span class="device-label"><span class="icon icon-fan" aria-hidden="true">🌀</span> Status kipas</span>
               <strong id="fanStatus" class="device-status">--</strong>
             </div>
 
@@ -123,7 +123,7 @@
 
           <div class="device-row">
             <div>
-              <span class="device-label">Sensor PIR</span>
+              <span class="device-label"><span class="icon icon-pir" aria-hidden="true">📡</span> Sensor PIR</span>
               <strong id="motionStatus" class="device-status">
                 Menunggu sensor...
               </strong>
@@ -134,7 +134,7 @@
 
           <div class="device-row">
             <div>
-              <span class="device-label">Lampu LED</span>
+              <span class="device-label"><span class="icon icon-led" aria-hidden="true">💡</span> Lampu LED</span>
               <strong id="ledStatus" class="device-status">--</strong>
             </div>
 
