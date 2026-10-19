@@ -29,7 +29,7 @@ input {
   font: inherit;
 }
 
-/* Bingkai dashboard putih, terpisah dari background halaman */
+/* Dashboard */
 .dashboard {
   width: min(1200px, calc(100% - 40px));
   margin: 0 auto;
@@ -40,6 +40,7 @@ input {
   box-shadow: 0 12px 36px rgba(31, 45, 75, 0.12);
 }
 
+/* Header */
 .topbar {
   min-height: 60px;
   display: flex;
@@ -49,16 +50,14 @@ input {
 }
 
 .brand {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 10px;
   color: var(--text);
   font-size: 19px;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-decoration: none;
-}
-.brand {
-  position: relative;
-  display: inline-block;
-  padding-bottom: 10px;
 }
 
 .brand::after {
@@ -68,7 +67,7 @@ input {
   bottom: 0;
   width: 100%;
   height: 6px;
-  background: #315efb;
+  background: var(--primary);
   border-radius: 50%;
   clip-path: polygon(
     0 40%, 12% 0, 25% 40%, 38% 0,
@@ -92,6 +91,7 @@ input {
 .connection-dot {
   width: 10px;
   height: 10px;
+  flex: 0 0 auto;
   border-radius: 50%;
   background: #f2ad3d;
   box-shadow: 0 0 0 4px rgba(242, 173, 61, 0.12);
@@ -107,7 +107,7 @@ input {
   box-shadow: 0 0 0 4px rgba(228, 84, 84, 0.12);
 }
 
-/* Kartu data suhu, kelembapan, dan akses */
+/* Kartu metrik */
 .metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -141,7 +141,7 @@ input {
 .metric-value {
   display: block;
   margin: 8px 0 5px;
-  font-size: 30px;
+  font-size: 27px;
   line-height: 1.15;
   font-weight: 800;
 }
@@ -200,9 +200,9 @@ input {
 
 /* Tombol */
 .button {
+  padding: 10px 13px;
   border: 0;
   border-radius: 8px;
-  padding: 10px 13px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
@@ -221,6 +221,7 @@ input {
 .table-wrap {
   width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
@@ -260,7 +261,7 @@ td {
   font-weight: 700;
 }
 
-/* Baris kontrol kipas, PIR, dan LED */
+/* Baris kontrol perangkat */
 .device-row {
   min-height: 65px;
   display: flex;
@@ -276,7 +277,7 @@ td {
   font-size: 14px;
 }
 
-/* Nilai sensor, jika digunakan */
+/* Nilai sensor */
 .sensor-values {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -302,7 +303,7 @@ td {
   font-size: 19px;
 }
 
-/* Indikator gerakan PIR */
+/* Indikator PIR */
 .motion-indicator {
   width: 11px;
   height: 11px;
@@ -344,8 +345,8 @@ td {
   content: "";
   width: 18px;
   height: 18px;
-  left: 3px;
   top: 3px;
+  left: 3px;
   background: #fff;
   border-radius: 50%;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
@@ -365,85 +366,7 @@ td {
   opacity: 0.55;
 }
 
-/* Footer */
-footer {
-  min-height: 0px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  color: var(--muted);
-  text-align: center;
-  font-size: 11px;
-}
-
-/* Tablet */
-@media (max-width: 850px) {
-  .metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .history-panel {
-    min-height: auto;
-  }
-}
-
-/* Ponsel */
-@media (max-width: 520px) {
-  body {
-    padding: 10px 0;
-  }
-
-  .dashboard {
-    width: calc(100% - 20px);
-    padding: 12px;
-    border-radius: 14px;
-  }
-
-  .topbar {
-    min-height: 72px;
-    align-items: flex-start;
-    flex-direction: column;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .brand {
-    font-size: 16px;
-  }
-
-  .metrics {
-    gap: 10px;
-  }
-
-  .metric-card {
-    min-height: 120px;
-    padding: 14px;
-  }
-
-  .metric-value {
-    font-size: 25px;
-  }
-
-  .panel {
-    padding: 16px;
-  }
-
-  .panel-heading {
-    align-items: flex-start;
-  }
-
-  th,
-  td {
-    padding-right: 8px;
-    padding-left: 8px;
-  }
-}
-
+/* Tanggal dan jam */
 .datetime {
   display: flex;
   flex-direction: column;
@@ -462,15 +385,15 @@ footer {
 }
 
 .timezone {
+  color: #64748b;
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
   letter-spacing: 0.05em;
 }
 
 .datetime span {
-  font-size: 15px;
   color: #020203;
+  font-size: 15px;
   text-transform: capitalize;
 }
 
@@ -480,16 +403,169 @@ footer {
   letter-spacing: 1.25px;
 }
 
-@media (max-width: 600px) {
-  .topbar {
-    flex-wrap: wrap;
-    gap: 12px;
+/* Ikon */
+.icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 24px;
+}
+
+.metric-label .icon {
+  width: 46px;
+  height: 46px;
+  font-size: 20px;
+}
+
+.device-label .icon,
+.panel-heading h2 .icon {
+  width: 38px;
+  height: 38px;
+  font-size: 15px;
+}
+
+/* Footer */
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--muted);
+  text-align: center;
+  font-size: 11px;
+}
+
+/* Tablet */
+@media (max-width: 850px) {
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .datetime {
-    margin-left: 0;
-    align-items: flex-start;
-    width: 100%;
+  .content-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .history-panel {
+    min-height: auto;
   }
 }
 
+/* Ponsel */
+@media (max-width: 520px) {
+  html,
+  body {
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  .dashboard {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 12px;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .topbar {
+    min-height: 48px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .brand {
+    padding-bottom: 8px;
+    font-size: 16px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  /* Sembunyikan tanggal dan jam di ponsel */
+  .datetime {
+    display: none;
+  }
+
+  .connection {
+    margin-left: auto;
+    gap: 7px;
+    font-size: 11px;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 10px 0 14px;
+  }
+
+  .metric-card {
+    min-width: 0;
+    min-height: 112px;
+    padding: 12px;
+  }
+
+  .metric-value {
+    font-size: 22px;
+    overflow-wrap: anywhere;
+  }
+
+  .metric-value small {
+    font-size: 14px;
+  }
+
+  .content-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .panel {
+    min-width: 0;
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .history-panel {
+    min-height: auto;
+  }
+
+  .panel-heading {
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .panel-heading h1,
+  .panel-heading h2 {
+    font-size: 15px;
+  }
+
+  /* Tabel dapat digeser horizontal jika terlalu lebar */
+  table {
+    min-width: 460px;
+  }
+
+  .sensor-values {
+    gap: 8px;
+  }
+
+  .sensor-values div {
+    min-width: 0;
+    padding: 10px;
+  }
+
+  .device-row {
+    gap: 8px;
+  }
+
+  th,
+  td {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+}
