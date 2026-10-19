@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Sport Center — ESP32</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="script.js"></script>
+</head>
+<body>
+  <main class="dashboard">
+    <header class="topbar">
+      <a class="brand" href="#">
+        SMART <span>SPORT CENTER</span>
+      </a>
+
+      <div class="connection">
+        <span id="connectionDot" class="connection-dot"></span>
+        <span id="connectionStatus">Menghubungkan ke Firebase...</span>
+      </div>
+
+      <div class="datetime">
+        <span id="currentDate"></span>
+        <div class="time-row">
+            <strong id="currentTime"></strong>
+            <span class="timezone">WIB</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="metrics" aria-label="Data sensor">
+      <article class="metric-card">
+        <span class="metric-label">Suhu</span>
+        <strong id="temperature" class="metric-value">--.-<small>°C</small></strong>
+        <span class="metric-note">Sensor DHT22</span>
+      </article>
+
+      <article class="metric-card">
+        <span class="metric-label">Kelembapan</span>
+        <strong id="humidity" class="metric-value">--<small>%</small></strong>
+        <span class="metric-note">Sensor DHT22</span>
+      </article>
+
+      <article class="metric-card">
+        <span class="metric-label">Total masuk RFID</span>
+        <strong id="rfidCount" class="metric-value">0</strong>
+        <span id="lastRfid" class="metric-note">Akses masuk</span>
+      </article>
+
+      <article class="metric-card">
+        <span class="metric-label">Total keluar Touch</span>
+        <strong id="touchCount" class="metric-value">0</strong>
+        <span class="metric-note">Akses keluar</span>
+      </article>
+    </section>
+
+    <section class="content-grid">
+      <section class="panel history-panel">
+        <div class="panel-heading">
+          <div>
+            <h1>Riwayat Aktivitas</h1>
+            <p>Data realtime dari ESP32 · <span id="lastUpdated">Menunggu data...</span></p>
+          </div>
+
+          <button id="clearHistory"
+                  class="button button-light"
+                  type="button">
+            Hapus tampilan
+          </button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Waktu</th>
+                <th>Jenis sensor</th>
+                <th>Aktivitas</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+
+            <tbody id="historyBody">
+              <tr>
+                <td colspan="4" class="empty-row">
+                  Menunggu data dari ESP32...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside class="side-column">
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Kontrol Kipas</h2>
+              <p>Kontrol manual melalui ESP32</p>
+            </div>
+          </div>
+
+          <div class="device-row">
+            <div>
+              <span class="device-label">Status kipas</span>
+              <strong id="fanStatus" class="device-status">--</strong>
+            </div>
+
+            <label class="switch" aria-label="Kontrol kipas">
+              <input id="fanToggle" type="checkbox" disabled>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Gerakan & Lampu</h2>
+              <p>Status sensor PIR dan LED</p>
+            </div>
+          </div>
+
+          <div class="device-row">
+            <div>
+              <span class="device-label">Sensor PIR</span>
+              <strong id="motionStatus" class="device-status">
+                Menunggu sensor...
+              </strong>
+            </div>
+
+            <span id="motionIndicator" class="motion-indicator"></span>
+          </div>
+
+          <div class="device-row">
+            <div>
+              <span class="device-label">Lampu LED</span>
+              <strong id="ledStatus" class="device-status">--</strong>
+            </div>
+
+            <label class="switch" aria-label="Kontrol lampu LED">
+              <input id="ledToggle" type="checkbox" disabled>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </section>
+      </aside>
+    </section>
+
+    <footer>
+      ESP32 · DHT22 · RFID RC522 · Touch Sensor · PIR · Kipas · LED · Servo
+    </footer>
+  </main>
+</body>
+</html>
