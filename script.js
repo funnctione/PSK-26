@@ -114,7 +114,10 @@ function pushSeries(series, value, lineEl, areaEl) {
 const ICON_OK = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#22c55e"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const ICON_WARN = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#f5b50a"/><path d="M12 7v6" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="16.8" r="1.4" fill="#fff"/></svg>`;
 
-function toneFor(sensor) {
+const ICON_DENY = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ef4444"/><path d="M8 8l8 8M16 8l-8 8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+
+function toneFor(sensor, status) {
+  if (status === "Ditolak") return "tone-red";
   const s = String(sensor).toLowerCase();
   if (s === "pir") return "tone-amber";
   if (s === "kipas" || s === "led") return "tone-cyan";
@@ -130,12 +133,14 @@ function renderHistory(history) {
 
   el.historyBody.innerHTML = history.slice(-30).reverse().map((item) => {
     const warn = item.status === "Aktif";
+    const deny = item.status === "Ditolak";
+    const icon = deny ? ICON_DENY : (warn ? ICON_WARN : ICON_OK);
     return `
-      <tr class="${toneFor(item.sensor)}">
+      <tr class="${toneFor(item.sensor, item.status)}">
         <td>${escapeHtml(item.time)}</td>
         <td>${escapeHtml(item.sensor)}</td>
         <td>${escapeHtml(item.activity)}</td>
-        <td><span class="status-tag">${warn ? ICON_WARN : ICON_OK}${escapeHtml(item.status)}</span></td>
+        <td><span class="status-tag">${icon}${escapeHtml(item.status)}</span></td>
       </tr>`;
   }).join("");
 }
@@ -163,9 +168,16 @@ function trackChanges(data) {
     if (toBool(data.motion)) addHistory("PIR", "Gerakan terdeteksi", "Aktif");
     else addHistory("PIR", "Gerakan berhenti");
   }
+  // Kartu terdaftar (UID 1 atau 2) -> akses masuk diizinkan
   if (changed("rfidCount", data)) {
-    const card = data.lastRfid ? `Kartu terbaca: ${data.lastRfid}` : "Kartu terbaca";
-    addHistory("RFID", card);
+    const uid = data.lastRfid ? ` (${data.lastRfid})` : "";
+    const id = data.lastRfidId ? `ID ${data.lastRfidId}` : "terdaftar";
+    addHistory("RFID", `Kartu ${id}${uid} - akses masuk diizinkan`);
+  }
+  // Kartu tidak terdaftar -> akses ditolak
+  if (changed("deniedCount", data)) {
+    const uid = data.lastRfid ? `: ${data.lastRfid}` : "";
+    addHistory("RFID", `UID tidak terdaftar${uid} - akses ditolak`, "Ditolak");
   }
   if (changed("touchCount", data)) addHistory("Touch", "Akses keluar");
   previous = { ...data };
