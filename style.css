@@ -312,6 +312,12 @@ tr.tone-green td:not(:last-child) { color: var(--green); }
 tr.tone-amber td:not(:last-child) { color: var(--amber); }
 tr.tone-cyan td:not(:last-child) { color: var(--cyan); }
 
+/* UID tidak terdaftar / akses ditolak */
+tr.tone-red td:not(:last-child) { color: var(--red); }
+tr.tone-red { background: rgba(255, 107, 107, .07); }
+tr.tone-red td:first-child { box-shadow: inset 3px 0 0 var(--red); }
+tr.tone-red .status-tag { color: var(--red); font-weight: 700; }
+
 .status-tag { display: inline-flex; align-items: center; gap: 7px; font-weight: 500; color: var(--text); }
 .status-tag svg { width: 18px; height: 18px; flex: none; }
 .empty-row { padding: 28px 14px; text-align: center; color: var(--muted); white-space: normal; }
