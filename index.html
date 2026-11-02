@@ -1,251 +1,288 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Smart Sport Center — ESP32</title>
-  <meta name="theme-color" content="#0b1020">
+  <meta name="theme-color" content="#0b1018">
   <script>
-    // Terapkan tema sebelum render agar tidak berkedip. Default: gelap.
     (function () {
       var theme = "dark";
       try {
         var saved = localStorage.getItem("theme");
         if (saved === "dark" || saved === "light") theme = saved;
-      } catch (e) {}
+      } catch (e) { }
       document.documentElement.setAttribute("data-theme", theme);
     })();
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Poppins:wght@400;500;600&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script type="module" src="script.js"></script>
 </head>
+
 <body>
-  <main class="frame">
+  <div class="app">
 
-    <!-- ===== Header ===== -->
-    <header class="topbar">
-      <svg class="topbar-waves" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0 78 C150 38 300 118 450 78 S750 38 900 78 1050 108 1200 70 V120 H0Z" fill="rgba(255,255,255,.08)"/>
-        <path d="M0 92 C160 62 320 122 480 92 S800 62 960 92 1100 112 1200 90 V120 H0Z" fill="rgba(255,255,255,.1)"/>
-        <path d="M0 64 C150 30 300 100 450 64 S750 30 900 64 1050 92 1200 58" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>
-      </svg>
-
-      <div class="topbar-left">
-        <div class="brand-wrap">
-          <a class="brand" href="#">SMART <span>SPORT CENTER</span></a>
-          <svg class="brand-wave" viewBox="0 0 200 12" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M0 6 Q12.500 0 25 6 T50 6 T75 6 T100 6 T125 6 T150 6 T175 6 T200 6" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.6" stroke-linecap="round"/>
+    <!-- ===== Sidebar ===== -->
+    <aside class="sidebar">
+      <a class="logo" href="#" aria-label="Smart Sport Center">SSC</a>
+      <nav class="nav" aria-label="Navigasi">
+        <a class="nav-item active" href="#sensor" title="Ringkasan" aria-label="Ringkasan">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="4" y="4" width="6" height="6" rx="1.5" />
+            <rect x="14" y="4" width="6" height="6" rx="1.5" />
+            <rect x="4" y="14" width="6" height="6" rx="1.5" />
+            <rect x="14" y="14" width="6" height="6" rx="1.5" />
           </svg>
+        </a>
+        <a class="nav-item" href="#riwayat" title="Riwayat" aria-label="Riwayat">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 12h4l3-8 4 16 3-8h4" />
+          </svg>
+        </a>
+        <a class="nav-item" href="#perangkat" title="Perangkat" aria-label="Perangkat">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 4v16M12 4v16M18 4v16M4 9h4M10 14h4M16 8h4" />
+          </svg>
+        </a>
+      </nav>
+
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Ganti ke mode terang" title="Ganti tema">
+        <svg class="icon icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4" />
+          <path
+            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+        </svg>
+        <svg class="icon icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+        </svg>
+      </button>
+    </aside>
+
+    <main class="main">
+
+      <!-- ===== Header ===== -->
+      <header class="topbar">
+        <div>
+          <h1 class="title">Smart Sport Center</h1>
+          <p class="subtitle"><span id="currentDate"></span> pukul <span id="currentTime">--.--</span> WIB</p>
         </div>
         <div class="connection">
           <span id="connectionDot" class="connection-dot"></span>
           <span id="connectionStatus">Menghubungkan...</span>
         </div>
-      </div>
+      </header>
 
-      <div class="topbar-right">
-        <div class="datetime">
-          <span id="currentDate"></span>
-          <div class="time-row">
-            <strong id="currentTime">--.--</strong>
-            <span class="timezone">WIB</span>
-          </div>
-        </div>
+      <!-- ===== Ringkasan sensor ===== -->
+      <h2 class="section-title" id="sensor">Ringkasan sensor</h2>
+      <section class="metrics" aria-label="Data sensor">
 
-        <button id="themeToggle" class="theme-toggle" type="button"
-                aria-label="Ganti ke mode terang" title="Ganti tema">
-          <svg class="icon icon-sun" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="4"/>
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-          </svg>
-          <svg class="icon icon-moon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
-          </svg>
-        </button>
-      </div>
-    </header>
-
-    <!-- ===== Kartu metrik ===== -->
-    <section class="metrics" aria-label="Data sensor">
-
-      <article class="metric-card metric-temp">
-        <div class="metric-head">
-          <span class="metric-label">Suhu</span>
-          <span class="metric-icon icon-red">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/></svg>
+        <article class="metric-card">
+          <span class="metric-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z" />
+            </svg>
           </span>
-        </div>
-        <div class="metric-body">
-          <div>
-            <strong id="temperature" class="metric-value value-red">--.-<small>°C</small></strong>
+          <div class="metric-text">
+            <span class="metric-label">Suhu</span>
+            <strong id="temperature" class="metric-value">--.-<small>°C</small></strong>
             <span class="metric-note">Sensor DHT22</span>
           </div>
-          <svg class="spark" viewBox="0 0 140 44" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="gradTemp" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#ff7a45" stop-opacity=".45"/>
-                <stop offset="1" stop-color="#ff7a45" stop-opacity="0"/>
-              </linearGradient>
-            </defs>
-            <path id="tempArea" class="spark-area" fill="url(#gradTemp)" d=""/>
-            <path id="tempLine" class="spark-line" stroke="#ff7a45" d=""/>
-          </svg>
-        </div>
-      </article>
+        </article>
 
-      <article class="metric-card metric-hum">
-        <div class="metric-head">
-          <span class="metric-label">Kelembapan</span>
-          <span class="metric-icon icon-blue">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.2 6 10.5A6 6 0 0 1 6 13.5C6 9.2 12 3 12 3z"/></svg>
+        <article class="metric-card">
+          <span class="metric-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3s6 6.2 6 10.5A6 6 0 0 1 6 13.5C6 9.2 12 3 12 3z" />
+            </svg>
           </span>
-        </div>
-        <div class="metric-body">
-          <div>
-            <strong id="humidity" class="metric-value value-blue">--<small>%</small></strong>
+          <div class="metric-text">
+            <span class="metric-label">Kelembapan</span>
+            <strong id="humidity" class="metric-value">--<small>%</small></strong>
             <span class="metric-note">Sensor DHT22</span>
           </div>
-          <svg class="spark" viewBox="0 0 140 44" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="gradHum" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#4f7cff" stop-opacity=".45"/>
-                <stop offset="1" stop-color="#4f7cff" stop-opacity="0"/>
-              </linearGradient>
-            </defs>
-            <path id="humArea" class="spark-area" fill="url(#gradHum)" d=""/>
-            <path id="humLine" class="spark-line" stroke="#4f7cff" d=""/>
-          </svg>
-        </div>
-      </article>
+        </article>
 
-      <article class="metric-card metric-access">
-        <span class="access-title">Kapasitas &amp; RFID</span>
-
-        <div class="access-stats">
-          <div class="stat">
-            <span class="access-label">Total masuk RFID</span>
-            <strong id="rfidCount" class="access-number value-blue">0</strong>
+        <article class="metric-card">
+          <span class="metric-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 12h12M12 7l5 5-5 5M20 4v16" />
+            </svg>
+          </span>
+          <div class="metric-text">
+            <span class="metric-label">Total masuk</span>
+            <strong id="rfidCount" class="metric-value">0</strong>
+            <span class="metric-note">Kartu RFID</span>
           </div>
+        </article>
 
-          <div class="stat stat-ring">
-            <div class="ring">
-              <svg viewBox="0 0 80 80" aria-hidden="true">
-                <circle class="ring-track" cx="40" cy="40" r="34"/>
-                <circle id="ringValue" class="ring-value" cx="40" cy="40" r="34"/>
-              </svg>
-              <svg class="ring-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="8" r="4"/>
-                <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>
-              </svg>
-            </div>
-            <div class="stat">
-              <span class="access-label">Pengunjung aktif</span>
-              <strong id="activeCount" class="access-number value-green">0</strong>
-            </div>
+        <article class="metric-card">
+          <span class="metric-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 12H8M12 7l-5 5 5 5M4 4v16" />
+            </svg>
+          </span>
+          <div class="metric-text">
+            <span class="metric-label">Total keluar</span>
+            <strong id="touchCount" class="metric-value">0</strong>
+            <span class="metric-note">Sensor sentuh</span>
           </div>
+        </article>
 
-          <div class="stat">
-            <span class="access-label">Total keluar Touch</span>
-            <strong id="touchCount" class="access-number value-red">0</strong>
-          </div>
-        </div>
-      </article>
-    </section>
-
-    <!-- ===== Konten utama ===== -->
-    <section class="content-grid">
-
-      <section class="panel history-panel">
-        <div class="panel-heading">
-          <div>
-            <h1>Riwayat Aktivitas</h1>
-            <p>Data realtime dari ESP32 · <span id="lastUpdated">Menunggu data...</span></p>
-          </div>
-          <button id="clearHistory" class="button-light" type="button">Hapus tampilan</button>
-        </div>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Waktu</th>
-                <th>Jenis sensor</th>
-                <th>Aktivitas</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="historyBody">
-              <tr><td colspan="4" class="empty-row">Menunggu data dari ESP32...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <aside class="side-column">
-
-        <!-- Kipas: hanya indikator -->
-        <section class="panel">
-          <div class="panel-heading">
-            <div>
-              <h2>Kontrol Kipas</h2>
-              <p>Kontrol manual melalui ESP32</p>
-            </div>
-          </div>
-
-          <div class="device-split">
-            <div class="device-row">
-              <div>
-                <span class="device-label">Status kipas</span>
-                <strong id="fanStatus" class="device-status">--</strong>
-              </div>
-              <span id="fanLamp" class="lamp" role="img" aria-label="Indikator kipas"></span>
-            </div>
-
-            <svg id="fanArt" class="fan-art" viewBox="0 0 100 100" aria-hidden="true">
-              <circle class="fan-ring" cx="50" cy="50" r="46"/>
-              <g class="fan-blades">
-                <ellipse cx="50" cy="25" rx="12" ry="21"/>
-                <ellipse cx="50" cy="25" rx="12" ry="21" transform="rotate(90 50 50)"/>
-                <ellipse cx="50" cy="25" rx="12" ry="21" transform="rotate(180 50 50)"/>
-                <ellipse cx="50" cy="25" rx="12" ry="21" transform="rotate(270 50 50)"/>
-              </g>
-              <circle class="fan-hub" cx="50" cy="50" r="8"/>
+        <article class="metric-card">
+          <div class="ring">
+            <svg viewBox="0 0 80 80" aria-hidden="true">
+              <circle class="ring-track" cx="40" cy="40" r="34" />
+              <circle id="ringValue" class="ring-value" cx="40" cy="40" r="34" />
+            </svg>
+            <svg class="ring-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
             </svg>
           </div>
+          <div class="metric-text">
+            <span class="metric-label">Pengunjung aktif</span>
+            <strong id="activeCount" class="metric-value">0</strong>
+            <span class="metric-note">Saat ini di dalam</span>
+          </div>
+        </article>
+      </section>
+
+      <!-- ===== Baris 1: grafik (kiri) + riwayat (kanan) ===== -->
+      <div class="row row-top">
+        <section class="chart-section" aria-label="Grafik DHT22">
+          <article class="panel chart-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Grafik DHT22</h2>
+                <p>Suhu dan kelembapan · 60 pembacaan terakhir</p>
+              </div>
+              <div class="chart-legend">
+                <span class="legend-item"><i class="legend-dot dot-temp"></i>Suhu (°C)</span>
+                <span class="legend-item"><i class="legend-dot dot-hum"></i>Kelembapan (%)</span>
+              </div>
+            </div>
+            <svg id="dhtChart" class="chart" viewBox="0 0 640 290" role="img"
+              aria-label="Grafik suhu dalam derajat Celcius dan kelembapan dalam persen"></svg>
+            <div class="chart-stats">
+              <div class="stat-group group-temp">
+                <strong>Suhu</strong>
+                <span>Sekarang <b id="tempNow">--</b></span>
+                <span>Min <b id="tempMin">--</b></span>
+                <span>Maks <b id="tempMax">--</b></span>
+                <span>Rata-rata <b id="tempAvg">--</b></span>
+              </div>
+              <div class="stat-group group-hum">
+                <strong>Kelembapan</strong>
+                <span>Sekarang <b id="humNow">--</b></span>
+                <span>Min <b id="humMin">--</b></span>
+                <span>Maks <b id="humMax">--</b></span>
+                <span>Rata-rata <b id="humAvg">--</b></span>
+              </div>
+            </div>
+          </article>
         </section>
 
-        <!-- PIR & LED -->
-        <section class="panel">
+        <section class="panel history-panel" id="riwayat">
           <div class="panel-heading">
             <div>
-              <h2>Gerakan &amp; Lampu</h2>
+              <h2>Riwayat aktivitas</h2>
+              <p>Data realtime dari ESP32 · <span id="lastUpdated">Menunggu data...</span></p>
+            </div>
+            <button id="clearHistory" class="button-light" type="button">Bersihkan</button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Waktu</th>
+                  <th>Sensor</th>
+                  <th>Aktivitas</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="historyBody">
+                <tr>
+                  <td colspan="4" class="empty-row">Menunggu data dari ESP32...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ===== Baris 2: gerakan & lampu (kiri) + kipas (kanan) ===== -->
+      <div class="row row-bottom">
+        <section class="panel motion-panel" id="perangkat">
+          <div class="panel-heading">
+            <div>
+              <h2>Gerakan &amp; lampu</h2>
               <p>Status sensor PIR dan LED</p>
             </div>
           </div>
 
-          <div class="device-row bordered">
-            <div>
-              <span class="device-label">Sensor PIR</span>
-              <strong id="motionStatus" class="device-status">Menunggu sensor...</strong>
+          <div class="device-grid">
+            <div class="device-row">
+              <div>
+                <span class="device-label">Sensor PIR</span>
+                <strong id="motionStatus" class="device-status">Menunggu sensor...</strong>
+              </div>
+              <span id="motionIndicator" class="lamp lamp-amber" role="img" aria-label="Indikator gerakan"></span>
             </div>
-            <span id="motionIndicator" class="lamp lamp-amber" role="img" aria-label="Indikator gerakan"></span>
-          </div>
 
-          <div class="device-row bordered">
-            <div>
-              <span class="device-label">Lampu LED</span>
-              <strong id="ledStatus" class="device-status">--</strong>
+            <div class="device-row">
+              <div>
+                <span class="device-label">Lampu LED</span>
+                <strong id="ledStatus" class="device-status">--</strong>
+              </div>
+              <span id="ledLamp" class="bulb" role="img" aria-label="Indikator LED">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 3a6 6 0 0 0-3.500 10.900c.6.5 1 1.200 1 2.100h5c0-.9.4-1.600 1-2.100A6 6 0 0 0 12 3z" />
+                  <path d="M9.500 18.500h5M10.500 21h3" />
+                </svg>
+              </span>
             </div>
-            <span id="ledLamp" class="lamp" role="img" aria-label="Indikator LED"></span>
           </div>
         </section>
-      </aside>
-    </section>
 
-    <footer>ESP32 · DHT22 · RFID RC522 · Touch Sensor · PIR · Kipas · LED · Servo</footer>
-  </main>
+        <section class="panel fan-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Output kipas</h2>
+              <p>Status kipas dari ESP32</p>
+            </div>
+          </div>
+
+          <div class="fan-block">
+            <svg id="fanArt" class="fan-art" viewBox="0 0 100 100" aria-hidden="true">
+              <circle class="fan-ring" cx="50" cy="50" r="47" />
+              <g class="fan-blades">
+                <path d="M46 43C42 35 40 26 43 18C45 13 51 11 56 13C59 15 58 20 56.500 26C55 32 55 37 54 43Z" />
+                <path d="M46 43C42 35 40 26 43 18C45 13 51 11 56 13C59 15 58 20 56.500 26C55 32 55 37 54 43Z"
+                  transform="rotate(120 50 50)" />
+                <path d="M46 43C42 35 40 26 43 18C45 13 51 11 56 13C59 15 58 20 56.500 26C55 32 55 37 54 43Z"
+                  transform="rotate(240 50 50)" />
+                <circle class="hub-outer" cx="50" cy="50" r="9.500" />
+                <circle class="hub-inner" cx="50" cy="50" r="5.500" />
+              </g>
+            </svg>
+            <div class="fan-state">
+              <span id="fanLamp" class="lamp" role="img" aria-label="Indikator kipas"></span>
+              <strong id="fanStatus" class="device-status">--</strong>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer>ESP32 · DHT22 · RFID RC522 · Touch Sensor · PIR · Kipas · LED · Servo</footer>
+    </main>
+  </div>
 </body>
+
 </html>

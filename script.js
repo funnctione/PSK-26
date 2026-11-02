@@ -29,10 +29,6 @@ const el = {
   connectionStatus: $("connectionStatus"),
   temperature: $("temperature"),
   humidity: $("humidity"),
-  tempLine: $("tempLine"),
-  tempArea: $("tempArea"),
-  humLine: $("humLine"),
-  humArea: $("humArea"),
   rfidCount: $("rfidCount"),
   touchCount: $("touchCount"),
   activeCount: $("activeCount"),
@@ -53,14 +49,12 @@ let lastUpdatedAtValue = null;
 let lastChangeLocal = 0;
 let previous = {};
 const localHistory = [];
-const tempSeries = [];
-const humSeries = [];
 
 /* ---------- Utilitas ---------- */
 
 function toBool(value) {
   return value === true || value === 1 || value === "1" ||
-         value === "ON" || value === "on" || value === "true" || value === "detected";
+    value === "ON" || value === "on" || value === "true" || value === "detected";
 }
 
 function escapeHtml(value) {
@@ -75,38 +69,113 @@ function setConnection(connected, message) {
   el.connectionDot.classList.toggle("disconnected", !connected);
 }
 
-/* ---------- Grafik mini (sparkline) ---------- */
+/* ---------- Grafik DHT22 (suhu + kelembapan) ---------- */
 
-function drawSpark(lineEl, areaEl, series) {
-  const W = 140, H = 44, PAD = 6;
-  if (series.length < 2) {
-    const flat = `M0 ${H / 2} L${W} ${H / 2}`;
-    lineEl.setAttribute("d", flat);
-    areaEl.setAttribute("d", `${flat} L${W} ${H} L0 ${H} Z`);
-    return;
-  }
-  const min = Math.min(...series);
-  const max = Math.max(...series);
-  const range = max - min || 1;
-  const step = W / (series.length - 1);
+const CHART_POINTS = 60;
+const chartPoints = [];
+let lastTemp = null;
+let lastHum = null;
+let chartWidth = 0;
+const chartSvg = $("dhtChart");
 
-  const points = series.map((v, i) => {
-    const x = i * step;
-    const y = max === min ? H / 2 : H - PAD - ((v - min) / range) * (H - PAD * 2);
-    return [x, y];
-  });
-
-  const line = points.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
-  lineEl.setAttribute("d", line);
-  areaEl.setAttribute("d", `${line} L${W} ${H} L0 ${H} Z`);
+function axisRange(vals, minStep, pad, round, low, high) {
+  const min = Math.min(...vals) - pad;
+  const max = Math.max(...vals) + pad;
+  let lo = Math.floor(min / round) * round;
+  const step = Math.max(minStep, Math.ceil((max - lo) / 4 / round) * round);
+  let hi = lo + step * 4;
+  if (high !== null && hi > high) { hi = high; lo = hi - step * 4; }
+  if (low !== null && lo < low) { lo = low; hi = Math.min(high ?? Infinity, lo + step * 4); }
+  return [lo, hi];
 }
 
-function pushSeries(series, value, lineEl, areaEl) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return;
-  series.push(n);
-  if (series.length > SPARK_POINTS) series.shift();
-  drawSpark(lineEl, areaEl, series);
+function tick(v, range) {
+  return v.toFixed(Number.isInteger(range / 4) ? 0 : 1);
+}
+
+function setStats(prefix, vals, digits, unit) {
+  const ids = ["Now", "Min", "Max", "Avg"].map((k) => $(prefix + k));
+  if (!vals.length) { ids.forEach((e) => { e.textContent = "--"; }); return; }
+  const f = (v) => `${v.toFixed(digits)}${unit}`;
+  const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+  ids[0].textContent = f(vals[vals.length - 1]);
+  ids[1].textContent = f(Math.min(...vals));
+  ids[2].textContent = f(Math.max(...vals));
+  ids[3].textContent = f(avg);
+}
+
+function renderChart() {
+  const W = Math.max(300, Math.round(chartSvg.getBoundingClientRect().width) || 640);
+  chartWidth = W;
+  const H = W < 520 ? 240 : 290;
+  const L = 40, R = 40, T = 26, B = 30;
+  chartSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+  const n = chartPoints.length;
+  const temps = chartPoints.map((p) => p.temp).filter((v) => v !== null);
+  const hums = chartPoints.map((p) => p.hum).filter((v) => v !== null);
+  setStats("temp", temps, 1, "°C");
+  setStats("hum", hums, 0, "%");
+
+  if (!n) {
+    chartSvg.innerHTML = `<text class="chart-empty" x="${W / 2}" y="${H / 2}" text-anchor="middle">Menunggu data dari ESP32...</text>`;
+    return;
+  }
+
+  const plotW = W - L - R, plotH = H - T - B;
+  const [tLo, tHi] = temps.length ? axisRange(temps, 1, 0.5, 1, null, null) : [0, 4];
+  const [hLo, hHi] = hums.length ? axisRange(hums, 5, 2, 5, 0, 100) : [0, 20];
+  const x = (i) => (n === 1 ? L + plotW / 2 : L + (i * plotW) / (n - 1));
+  const yT = (v) => T + (1 - (v - tLo) / (tHi - tLo)) * plotH;
+  const yH = (v) => T + (1 - (v - hLo) / (hHi - hLo)) * plotH;
+
+  let grid = `<text class="chart-text-temp" x="${L - 8}" y="12" text-anchor="end">°C</text>` +
+    `<text class="chart-text-hum" x="${W - R + 8}" y="12" text-anchor="start">%</text>`;
+  for (let i = 0; i <= 4; i++) {
+    const yy = T + plotH * (1 - i / 4);
+    grid += `<line class="chart-grid" x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}"/>`;
+    if (temps.length) grid += `<text class="chart-text-temp" x="${L - 8}" y="${yy + 4}" text-anchor="end">${tick(tLo + ((tHi - tLo) * i) / 4, tHi - tLo)}</text>`;
+    if (hums.length) grid += `<text class="chart-text-hum" x="${W - R + 8}" y="${yy + 4}" text-anchor="start">${tick(hLo + ((hHi - hLo) * i) / 4, hHi - hLo)}</text>`;
+  }
+
+  const idx = n === 1 ? [0] : [0, Math.floor((n - 1) / 2), n - 1];
+  const anchors = n === 1 ? ["middle"] : ["start", "middle", "end"];
+  const xLabels = idx.map((ix, k) =>
+    `<text class="chart-text" x="${x(ix)}" y="${H - 8}" text-anchor="${anchors[k]}">${escapeHtml(chartPoints[ix].t)}</text>`
+  ).join("");
+
+  const series = (key, y, cls) => {
+    let d = "", last = -1;
+    chartPoints.forEach((p, i) => {
+      if (p[key] === null) return;
+      d += `${d ? "L" : "M"}${x(i).toFixed(1)} ${y(p[key]).toFixed(1)} `;
+      last = i;
+    });
+    if (last < 0) return "";
+    return `<path class="chart-line line-${cls}" d="${d.trim()}"/>` +
+      `<circle class="chart-dot dotfill-${cls}" cx="${x(last).toFixed(1)}" cy="${y(chartPoints[last][key]).toFixed(1)}" r="5"/>`;
+  };
+
+  chartSvg.innerHTML = grid + xLabels + series("hum", yH, "hum") + series("temp", yT, "temp");
+}
+
+// Satu titik grafik per kiriman data ESP32.
+function pushChartPoint(data) {
+  const t = new Date().toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta" });
+  if (data.temperature != null && Number.isFinite(Number(data.temperature))) lastTemp = Number(data.temperature);
+  if (data.humidity != null && Number.isFinite(Number(data.humidity))) lastHum = Number(data.humidity);
+  if (lastTemp === null && lastHum === null) return;
+  chartPoints.push({ t, temp: lastTemp, hum: lastHum });
+  if (chartPoints.length > CHART_POINTS) chartPoints.shift();
+  renderChart();
+}
+
+// Gambar ulang saat lebar layar berubah (HP, tablet, rotasi).
+if (typeof ResizeObserver !== "undefined") {
+  new ResizeObserver(() => {
+    const w = Math.round(chartSvg.getBoundingClientRect().width);
+    if (w && Math.abs(w - chartWidth) > 1) renderChart();
+  }).observe(chartSvg.parentElement);
 }
 
 /* ---------- Riwayat ---------- */
@@ -183,6 +252,39 @@ function trackChanges(data) {
   previous = { ...data };
 }
 
+/* ---------- Putaran kipas (mengikuti kipas fisik) ---------- */
+
+const fanBlades = el.fanArt.querySelector(".fan-blades");
+const FAN_MAX_SPEED = 900;   // derajat per detik (kecepatan penuh)
+let fanAngle = 0;
+let fanSpeed = 0;
+let fanTarget = 0;
+let fanLastTs = 0;
+let fanRaf = null;
+
+function fanLoop(ts) {
+  const dt = Math.min(0.05, (ts - fanLastTs) / 1000 || 0);
+  fanLastTs = ts;
+
+  // naik cepat saat dinyalakan, melambat pelan saat dimatikan
+  const easing = fanTarget > fanSpeed ? 3 : 1.2;
+  fanSpeed += (fanTarget - fanSpeed) * Math.min(1, easing * dt);
+  if (fanTarget === 0 && fanSpeed < 2) fanSpeed = 0;
+
+  fanAngle = (fanAngle + fanSpeed * dt) % 360;
+  fanBlades.setAttribute("transform", `rotate(${fanAngle.toFixed(1)} 50 50)`);
+
+  fanRaf = (fanSpeed > 0 || fanTarget > 0) ? requestAnimationFrame(fanLoop) : null;
+}
+
+function setFanSpinning(on) {
+  fanTarget = on ? FAN_MAX_SPEED : 0;
+  if (!fanRaf) {
+    fanLastTs = performance.now();
+    fanRaf = requestAnimationFrame(fanLoop);
+  }
+}
+
 /* ---------- Pembaruan tampilan ---------- */
 
 function setIndicator(lamp, statusEl, on, textOn, textOff) {
@@ -212,14 +314,12 @@ function updateDashboard(data) {
     const t = Number(data.temperature);
     el.temperature.innerHTML = Number.isFinite(t)
       ? `${t.toFixed(1)}<small>°C</small>` : `--.-<small>°C</small>`;
-    pushSeries(tempSeries, t, el.tempLine, el.tempArea);
   }
 
   if (data.humidity !== undefined) {
     const h = Number(data.humidity);
     el.humidity.innerHTML = Number.isFinite(h)
       ? `${Math.round(h)}<small>%</small>` : `--<small>%</small>`;
-    pushSeries(humSeries, h, el.humLine, el.humArea);
   }
 
   if (data.rfidCount !== undefined) el.rfidCount.textContent = String(data.rfidCount);
@@ -230,6 +330,7 @@ function updateDashboard(data) {
     const on = toBool(data.fan);
     setIndicator(el.fanLamp, el.fanStatus, on, "AKTIF", "MATI");
     el.fanArt.classList.toggle("on", on);
+    setFanSpinning(on);
   }
 
   if (data.led !== undefined) {
@@ -259,6 +360,7 @@ function startListening() {
       lastUpdatedAtValue = data.updatedAt;
       lastChangeLocal = Date.now();
       setConnection(true, "ESP32 Online");
+      pushChartPoint(data);
     }
 
     try {
@@ -327,14 +429,13 @@ applyTheme(currentTheme());
 themeToggle.addEventListener("click", () => {
   const next = currentTheme() === "dark" ? "light" : "dark";
   applyTheme(next);
-  try { localStorage.setItem("theme", next); } catch (e) {}
+  try { localStorage.setItem("theme", next); } catch (e) { }
 });
 
 /* ---------- Mulai ---------- */
 
-drawSpark(el.tempLine, el.tempArea, tempSeries);
-drawSpark(el.humLine, el.humArea, humSeries);
 setConnection(false, "Menghubungkan...");
+renderChart();
 
 signInAnonymously(auth)
   .then(startListening)
