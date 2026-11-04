@@ -9,7 +9,7 @@ html {
   --card: #FFFFFF;
   --bd: #E4E8EE;
   --ink: #1B2433;
-  --mut: #6B7789;
+  --mut: #09090a;
   --tile: #F7F9FB;
   --c1: #2F6DB3;
   --c2: #1E8C7E;
@@ -29,7 +29,7 @@ html {
   --card: #141B25;
   --bd: #222C3A;
   --ink: #E7EBF1;
-  --mut: #8692A4;
+  --mut: #96989b;
   --tile: #0F151D;
   --c1: #6EA8E0;
   --c2: #5CBFB0;
@@ -240,9 +240,18 @@ h1 {
   padding: 1.125rem 1.25rem;
   border: 1px solid var(--bd);
   border-radius: 0.875rem;
+  /* >>> UBAH WARNA LATAR HEADER DI SINI (berlaku gelap & terang) <<< */
+  --hero-awal: color-mix(in srgb, var(--c1) 16%, var(--card));
+  /* warna kiri atas (biru muda) */
+  --hero-akhir: var(--card);
+  /* warna ke arah kanan bawah */
+  --hero-cahaya: color-mix(in srgb, var(--c2) 20%, transparent);
+  /* cahaya hijau di pojok kanan atas */
+  --hero-cincin: color-mix(in srgb, var(--c1) 8%, transparent);
+  /* lingkaran di pojok kanan bawah */
   background:
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--c2) 20%, transparent), transparent 46%),
-    linear-gradient(135deg, color-mix(in srgb, var(--c1) 16%, var(--card)), var(--card) 65%)
+    radial-gradient(circle at 100% 0%, var(--hero-cahaya), transparent 46%),
+    linear-gradient(135deg, var(--hero-awal), var(--hero-akhir) 65%)
 }
 
 .hero::after {
@@ -253,7 +262,7 @@ h1 {
   width: 11rem;
   height: 11rem;
   border-radius: 50%;
-  border: 1.5rem solid color-mix(in srgb, var(--c1) 8%, transparent);
+  border: 1.5rem solid var(--hero-cincin);
   pointer-events: none
 }
 
@@ -887,12 +896,19 @@ h2 {
   --bg: #E8F1F7;
   --bd: #D3E3EC;
   --tile: #EDF5F9;
-  --side: #BFDCEA
+  --side: #BFDCEA;
+  /* >>> UBAH WARNA SIDEBAR MODE TERANG DI SINI <<< */
+  --side-atas: #a2d8f4;
+  /* warna atas */
+  --side-bawah: #bcd7e5;
+  /* warna bawah (samakan dengan atas untuk warna polos) */
+  --side-garis: #9CC6DB
+    /* garis tepi */
 }
 
 [data-tema="terang"] .side {
-  background: linear-gradient(180deg, #C6E1EE, #A9D0E3);
-  border-right: 1px solid #9CC6DB
+  background: linear-gradient(180deg, var(--side-atas), var(--side-bawah));
+  border-right: 1px solid var(--side-garis)
 }
 
 [data-tema="terang"] .side a,
@@ -1486,8 +1502,6 @@ h2 .ic {
   transition: none !important;
 }
 
-
-/* ---------- Logo di header ---------- */
 .hero-ico {
   background: #fff;
   box-shadow: 0 .375rem 1rem rgba(0, 0, 0, .18), inset 0 0 0 1px rgba(11, 34, 82, .08)
@@ -1498,4 +1512,19 @@ h2 .ic {
   height: 76%;
   object-fit: contain;
   display: block
+}
+
+[data-tema="terang"] .hero {
+  --hero-awal: #a1ddfb;
+  --hero-akhir: #cdeefe;
+  --hero-cahaya: transparent;
+  --hero-cincin: rgba(255, 255, 255, .28);
+
+}
+
+[data-tema="gelap"] .hero {
+  --hero-awal: #0d3f6b;
+  --hero-akhir: #0c1420;
+  --hero-cahaya: rgba(45, 57, 68, 0.18);
+  --hero-cincin: rgba(110, 168, 224, .10);
 }
