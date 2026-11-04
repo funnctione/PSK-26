@@ -1,3 +1,11 @@
+  <p align="center">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/logo-putih.png">
+      <img src="docs/logo.png" alt="Smart Sport Center" width="220">
+    </picture>
+  </p>
+
+
 # Smart Sport Center
 
 Sistem monitoring ruang olahraga berbasis **ESP32** dengan dashboard web *real-time*. ESP32 membaca suhu, kelembapan, gerakan, dan akses pintu (RFID + sensor sentuh), mengirim datanya ke **Firebase Realtime Database**, lalu dashboard menampilkannya langsung di browser, baik di desktop maupun HP.
