@@ -419,9 +419,8 @@ setInterval(updateDateTime, 1000);
 const temaBtn = $("tema");
 const themeMeta = document.querySelector('meta[name="theme-color"]');
 
-function setTema(t) {
+function terapkanTema(t) {
   document.documentElement.dataset.tema = t;
-  try { localStorage.setItem("tema", t); } catch (e) { }
   temaBtn.innerHTML = `<svg class="ic"><use href="#${t === "gelap" ? "i-sun" : "i-moon"}"/></svg>`;
   const next = t === "gelap" ? "terang" : "gelap";
   temaBtn.setAttribute("aria-label", `Ganti ke mode ${next}`);
@@ -429,8 +428,26 @@ function setTema(t) {
   if (themeMeta) themeMeta.setAttribute("content", t === "gelap" ? "#0D1218" : "#E8F1F7");
 }
 
-temaBtn.onclick = () => setTema(document.documentElement.dataset.tema === "gelap" ? "terang" : "gelap");
+/* animasi = true hanya saat tombol diklik; saat halaman dibuka tema langsung terpasang */
+function setTema(t, animasi) {
+  const root = document.documentElement;
+  if (animasi) { try { localStorage.setItem("tema", t); } catch (e) { } } // simpan hanya jika dipilih manual
+  const kurangiGerak = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!animasi || kurangiGerak || !document.startViewTransition) { terapkanTema(t); return; }
+  root.classList.add("ganti-tema");
+  const vt = document.startViewTransition(() => terapkanTema(t));
+  vt.finished.finally(() => root.classList.remove("ganti-tema"));
+}
+
+temaBtn.onclick = () => setTema(document.documentElement.dataset.tema === "gelap" ? "terang" : "gelap", true);
 setTema(document.documentElement.dataset.tema === "terang" ? "terang" : "gelap");
+
+/* Jika pengguna belum memilih manual, ikuti perubahan tema sistem (HP) secara langsung */
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+  let tersimpan = null;
+  try { tersimpan = localStorage.getItem("tema"); } catch (err) { }
+  if (tersimpan !== "terang" && tersimpan !== "gelap") setTema(e.matches ? "gelap" : "terang", false);
+});
 
 document.querySelectorAll(".side nav a").forEach((a) => a.addEventListener("click", () => {
   document.querySelectorAll(".side nav a").forEach((x) => x.classList.remove("act"));

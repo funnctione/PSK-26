@@ -57,7 +57,6 @@ body {
   background: var(--bg);
   color: var(--ink);
   padding-left: 4.375rem;
-  transition: background .25s
 }
 
 :focus-visible {
@@ -343,7 +342,6 @@ h2 {
   border-radius: 0.75rem;
   padding: 1rem 1.125rem;
   min-width: 0;
-  transition: background .25s
 }
 
 .sub {
@@ -1459,4 +1457,31 @@ h2 .ic {
   #log {
     height: 9.5rem
   }
+}
+
+/* ---------- Animasi ganti tema (pudar cepat ala Google) ---------- */
+:root {
+  color-scheme: light dark;
+}
+
+[data-tema="gelap"] {
+  color-scheme: dark;
+}
+
+[data-tema="terang"] {
+  color-scheme: light;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: .18s;
+  /* ubah: .12s lebih cepat, .25s lebih lembut */
+  animation-timing-function: ease-out;
+}
+
+/* cegah transisi lain (mis. lampu, kipas) ikut berjalan saat tema berganti */
+.ganti-tema *,
+.ganti-tema *::before,
+.ganti-tema *::after {
+  transition: none !important;
 }

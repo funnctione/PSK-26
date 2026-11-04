@@ -6,7 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Smart Sport Center — ESP32</title>
   <meta name="theme-color" content="#0D1218">
-  <script>try { var t = localStorage.getItem('tema'); document.documentElement.dataset.tema = t === 'terang' ? 'terang' : 'gelap' } catch (e) { document.documentElement.dataset.tema = 'gelap' }</script>
+  <meta name="color-scheme" content="light dark">
+  <script>
+    /* Pakai pilihan tersimpan; kalau belum ada, ikuti tema HP/perangkat pengguna */
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('tema'); } catch (e) { }
+      if (t !== 'terang' && t !== 'gelap') {
+        t = matchMedia('(prefers-color-scheme: light)').matches ? 'terang' : 'gelap';
+      }
+      document.documentElement.dataset.tema = t;
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -25,75 +36,164 @@
           d="M-55 -125C-62 -200 -10 -262 60 -255C100 -250 125 -225 132 -205C100 -228 60 -235 25 -228C-20 -222 -40 -180 -40 -125Z" />
       </g>
       <!-- Ikon duotone: garis + isian tipis -->
-      <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="9" rx="2" fill="currentColor" fill-opacity=".18"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="12" width="8" height="9" rx="2"/><rect x="3" y="16" width="8" height="5" rx="2"/></symbol>
-      <symbol id="i-chart" viewBox="0 0 24 24"><path d="M7 15l4-4 3 3 5-6v11H7z" fill="currentColor" fill-opacity=".18" stroke="none"/><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 15l4-4 3 3 5-6"/></symbol>
-      <symbol id="i-act" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
-      <symbol id="i-chip" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3" fill="currentColor" fill-opacity=".18"/><rect x="9" y="9" width="6" height="6" rx="1.2"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
-      <symbol id="i-temp" viewBox="0 0 24 24"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0z" fill="currentColor" fill-opacity=".18"/><path d="M12 18V9M17.5 6h2M17.5 9h2"/><circle cx="12" cy="18" r="1.4" fill="currentColor"/></symbol>
-      <symbol id="i-hum" viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" fill="currentColor" fill-opacity=".18"/><path d="M9 15.5a3 3 0 0 0 3 3"/></symbol>
-      <symbol id="i-in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4z" fill="currentColor" fill-opacity=".18"/><path d="M10 17l5-5-5-5M15 12H3"/></symbol>
-      <symbol id="i-out" viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4z" fill="currentColor" fill-opacity=".18"/><path d="M16 17l5-5-5-5M21 12H9"/></symbol>
-      <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity=".18"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
-      <symbol id="i-motion" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></symbol>
-      <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5z" fill="currentColor" fill-opacity=".18"/><path d="M9 18h6M10 22h4"/></symbol>
-      <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5M12 7v5l4 2"/></symbol>
-      <symbol id="i-fan" viewBox="0 0 24 24"><path d="M10.827 16.379a6.082 6.082 0 0 1-8.618-7.002l5.412 1.45a6.082 6.082 0 0 1 7.002-8.618l-1.45 5.412a6.082 6.082 0 0 1 8.618 7.002l-5.412-1.45a6.082 6.082 0 0 1-7.002 8.618l1.45-5.412z"/><path d="M12 12v.01"/></symbol>
-      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor" fill-opacity=".18"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
-      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" fill="currentColor" fill-opacity=".18"/></symbol>
-      <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M18 2H6v7a6 6 0 0 0 12 0V2z" fill="currentColor" fill-opacity=".22"/><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/></symbol>
-      <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" fill="currentColor" fill-opacity=".18"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
-      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity=".18"/><path d="M12 6v6l4 2"/></symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="8" height="9" rx="2" fill="currentColor" fill-opacity=".18" />
+        <rect x="13" y="3" width="8" height="5" rx="2" />
+        <rect x="13" y="12" width="8" height="9" rx="2" />
+        <rect x="3" y="16" width="8" height="5" rx="2" />
+      </symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24">
+        <path d="M7 15l4-4 3 3 5-6v11H7z" fill="currentColor" fill-opacity=".18" stroke="none" />
+        <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+        <path d="M7 15l4-4 3 3 5-6" />
+      </symbol>
+      <symbol id="i-act" viewBox="0 0 24 24">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+      </symbol>
+      <symbol id="i-chip" viewBox="0 0 24 24">
+        <rect x="5" y="5" width="14" height="14" rx="3" fill="currentColor" fill-opacity=".18" />
+        <rect x="9" y="9" width="6" height="6" rx="1.2" />
+        <path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3" />
+      </symbol>
+      <symbol id="i-temp" viewBox="0 0 24 24">
+        <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0z" fill="currentColor" fill-opacity=".18" />
+        <path d="M12 18V9M17.5 6h2M17.5 9h2" />
+        <circle cx="12" cy="18" r="1.4" fill="currentColor" />
+      </symbol>
+      <symbol id="i-hum" viewBox="0 0 24 24">
+        <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"
+          fill="currentColor" fill-opacity=".18" />
+        <path d="M9 15.5a3 3 0 0 0 3 3" />
+      </symbol>
+      <symbol id="i-in" viewBox="0 0 24 24">
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4z" fill="currentColor" fill-opacity=".18" />
+        <path d="M10 17l5-5-5-5M15 12H3" />
+      </symbol>
+      <symbol id="i-out" viewBox="0 0 24 24">
+        <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4z" fill="currentColor" fill-opacity=".18" />
+        <path d="M16 17l5-5-5-5M21 12H9" />
+      </symbol>
+      <symbol id="i-users" viewBox="0 0 24 24">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity=".18" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+      </symbol>
+      <symbol id="i-motion" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="2.2" fill="currentColor" />
+        <path
+          d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2" />
+      </symbol>
+      <symbol id="i-bulb" viewBox="0 0 24 24">
+        <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5z"
+          fill="currentColor" fill-opacity=".18" />
+        <path d="M9 18h6M10 22h4" />
+      </symbol>
+      <symbol id="i-history" viewBox="0 0 24 24">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+        <path d="M3 3v5h5M12 7v5l4 2" />
+      </symbol>
+      <symbol id="i-fan" viewBox="0 0 24 24">
+        <path
+          d="M10.827 16.379a6.082 6.082 0 0 1-8.618-7.002l5.412 1.45a6.082 6.082 0 0 1 7.002-8.618l-1.45 5.412a6.082 6.082 0 0 1 8.618 7.002l-5.412-1.45a6.082 6.082 0 0 1-7.002 8.618l1.45-5.412z" />
+        <path d="M12 12v.01" />
+      </symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4" fill="currentColor" fill-opacity=".18" />
+        <path
+          d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+      </symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" fill="currentColor" fill-opacity=".18" />
+      </symbol>
+      <symbol id="i-trophy" viewBox="0 0 24 24">
+        <path d="M18 2H6v7a6 6 0 0 0 12 0V2z" fill="currentColor" fill-opacity=".22" />
+        <path
+          d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+      </symbol>
+      <symbol id="i-cal" viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="18" rx="2" fill="currentColor" fill-opacity=".18" />
+        <path d="M16 2v4M8 2v4M3 10h18" />
+      </symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity=".18" />
+        <path d="M12 6v6l4 2" />
+      </symbol>
     </defs>
   </svg>
 
   <aside class="side">
     <b class="logo">SSC</b>
     <nav>
-      <a href="#utama" class="act" title="Ringkasan" aria-label="Ringkasan"><svg class="ic"><use href="#i-grid" /></svg></a>
-      <a href="#grafik" title="Grafik DHT22" aria-label="Grafik DHT22"><svg class="ic"><use href="#i-chart" /></svg></a>
-      <a href="#perangkat" title="Gerakan &amp; lampu" aria-label="Gerakan dan lampu"><svg class="ic"><use href="#i-chip" /></svg></a>
-      <a href="#riwayat" title="Riwayat aktivitas" aria-label="Riwayat aktivitas"><svg class="ic"><use href="#i-history" /></svg></a>
+      <a href="#utama" class="act" title="Ringkasan" aria-label="Ringkasan"><svg class="ic">
+          <use href="#i-grid" />
+        </svg></a>
+      <a href="#grafik" title="Grafik DHT22" aria-label="Grafik DHT22"><svg class="ic">
+          <use href="#i-chart" />
+        </svg></a>
+      <a href="#perangkat" title="Gerakan &amp; lampu" aria-label="Gerakan dan lampu"><svg class="ic">
+          <use href="#i-chip" />
+        </svg></a>
+      <a href="#riwayat" title="Riwayat aktivitas" aria-label="Riwayat aktivitas"><svg class="ic">
+          <use href="#i-history" />
+        </svg></a>
     </nav>
     <button id="tema" type="button" title="Ganti tema" aria-label="Ganti tema"></button>
   </aside>
 
   <main id="utama">
     <header class="hero">
-      <i class="hero-ico"><svg class="ic"><use href="#i-trophy" /></svg></i>
+      <i class="hero-ico"><svg class="ic">
+          <use href="#i-trophy" />
+        </svg></i>
       <div class="hero-t">
         <h1>Smart Sport Center</h1>
         <p class="hero-sub">Monitoring ruang olahraga berbasis ESP32</p>
       </div>
       <div class="meta">
-        <span id="esp" class="chip" data-s="wait" role="status"><i class="dot"></i><span id="esp-t">Menghubungkan...</span></span>
-        <span class="pill"><svg class="ic"><use href="#i-cal" /></svg><span id="currentDate"></span></span>
-        <span class="pill"><svg class="ic"><use href="#i-clock" /></svg><b id="currentTime">--.--</b> WIB</span>
-        <span class="pill"><svg class="ic"><use href="#i-act" /></svg>Data terakhir <b id="lastUpdated">belum ada</b></span>
+        <span id="esp" class="chip" data-s="wait" role="status"><i class="dot"></i><span
+            id="esp-t">Menghubungkan...</span></span>
+        <span class="pill"><svg class="ic">
+            <use href="#i-cal" />
+          </svg><span id="currentDate"></span></span>
+        <span class="pill"><svg class="ic">
+            <use href="#i-clock" />
+          </svg><b id="currentTime">--.--</b> WIB</span>
+        <span class="pill"><svg class="ic">
+            <use href="#i-act" />
+          </svg>Data terakhir <b id="lastUpdated">belum ada</b></span>
       </div>
     </header>
 
     <h2 class="sr">Ringkasan sensor</h2>
     <section class="stats" id="stats" aria-label="Data sensor">
       <article class="stat">
-        <i class="ico"><svg class="ic"><use href="#i-temp" /></svg></i>
+        <i class="ico"><svg class="ic">
+            <use href="#i-temp" />
+          </svg></i>
         <div><span>Suhu</span>
           <p class="val"><em id="temperature">--.-</em><u>°C</u></p><small>Sensor DHT22</small>
         </div>
       </article>
       <article class="stat">
-        <i class="ico"><svg class="ic"><use href="#i-hum" /></svg></i>
+        <i class="ico"><svg class="ic">
+            <use href="#i-hum" />
+          </svg></i>
         <div><span>Kelembapan</span>
           <p class="val"><em id="humidity">--</em><u>%</u></p><small>Sensor DHT22</small>
         </div>
       </article>
       <article class="stat">
-        <i class="ico"><svg class="ic"><use href="#i-in" /></svg></i>
+        <i class="ico"><svg class="ic">
+            <use href="#i-in" />
+          </svg></i>
         <div><span>Total masuk</span>
           <p class="val"><em id="rfidCount">0</em></p><small>Kartu RFID</small>
         </div>
       </article>
       <article class="stat">
-        <i class="ico"><svg class="ic"><use href="#i-out" /></svg></i>
+        <i class="ico"><svg class="ic">
+            <use href="#i-out" />
+          </svg></i>
         <div><span>Total keluar</span>
           <p class="val"><em id="touchCount">0</em></p><small>Sensor sentuh</small>
         </div>
@@ -104,7 +204,9 @@
             <circle class="ring-track" cx="40" cy="40" r="34" />
             <circle id="ringValue" class="ring-value" cx="40" cy="40" r="34" />
           </svg>
-          <svg class="ic ring-icon"><use href="#i-users" /></svg>
+          <svg class="ic ring-icon">
+            <use href="#i-users" />
+          </svg>
         </div>
         <div><span>Pengunjung aktif</span>
           <p class="val"><em id="activeCount">0</em></p><small>Saat ini di dalam</small>
@@ -115,8 +217,11 @@
     <div class="board">
       <section class="card" id="grafik">
         <div class="ch">
-          <h2><svg class="ic"><use href="#i-chart" /></svg>Grafik DHT22</h2>
-          <p class="leg"><i style="background:var(--c1)"></i>Suhu (°C)<i style="background:var(--c2)"></i>Kelembapan (%)</p>
+          <h2><svg class="ic">
+              <use href="#i-chart" />
+            </svg>Grafik DHT22</h2>
+          <p class="leg"><i style="background:var(--c1)"></i>Suhu (°C)<i style="background:var(--c2)"></i>Kelembapan (%)
+          </p>
         </div>
         <p class="sub">Suhu dan kelembapan · 60 pembacaan terakhir</p>
         <svg id="dhtChart" class="chart" viewBox="0 0 640 208" role="img"
@@ -140,7 +245,9 @@
       </section>
 
       <section class="card" id="kontrol">
-        <h2><svg class="ic"><use href="#i-fan" /></svg>Output kipas</h2>
+        <h2><svg class="ic">
+            <use href="#i-fan" />
+          </svg>Output kipas</h2>
         <p class="sub">Status kipas dari ESP32</p>
         <div class="fanbox"><svg id="fanArt" class="fan" viewBox="0 0 100 100" aria-label="Kipas">
             <g class="fan-blades">
@@ -157,13 +264,20 @@
       </section>
 
       <section class="card" id="perangkat">
-        <h2><svg class="ic"><use href="#i-chip" /></svg>Gerakan &amp; lampu</h2>
+        <h2><svg class="ic">
+            <use href="#i-chip" />
+          </svg>Gerakan &amp; lampu</h2>
         <p class="sub">Status sensor PIR dan LED penerangan</p>
         <div class="stack">
-          <div class="lrow"><i id="motionIndicator" class="lamp" role="img" aria-label="Indikator gerakan"><svg class="ic"><use href="#i-motion" /></svg></i>
+          <div class="lrow"><i id="motionIndicator" class="lamp" role="img" aria-label="Indikator gerakan"><svg
+                class="ic">
+                <use href="#i-motion" />
+              </svg></i>
             <div><b>Sensor PIR</b><small id="motionStatus">Menunggu sensor...</small></div>
           </div>
-          <div class="lrow"><i id="ledLamp" class="lamp" role="img" aria-label="Indikator LED"><svg class="ic"><use href="#i-bulb" /></svg></i>
+          <div class="lrow"><i id="ledLamp" class="lamp" role="img" aria-label="Indikator LED"><svg class="ic">
+                <use href="#i-bulb" />
+              </svg></i>
             <div><b>Lampu LED</b><small id="ledStatus">--</small></div>
           </div>
         </div>
@@ -172,7 +286,9 @@
 
       <section class="card" id="logcard">
         <div class="ch">
-          <h2 id="riwayat"><svg class="ic"><use href="#i-history" /></svg>Riwayat aktivitas</h2><button id="clearHistory" class="lnk" type="button">Bersihkan</button>
+          <h2 id="riwayat"><svg class="ic">
+              <use href="#i-history" />
+            </svg>Riwayat aktivitas</h2><button id="clearHistory" class="lnk" type="button">Bersihkan</button>
         </div>
         <p class="sub">Riwayat 30 peristiwa terakhir dari ESP32</p>
         <ul id="log">
