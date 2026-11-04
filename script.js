@@ -19,14 +19,14 @@ const db = getDatabase(app);
 // Dashboard ini hanya MEMBACA data (tidak ada kontrol dari web).
 const SENSORS_PATH = "smartSportCenter/sensors";
 const OFFLINE_AFTER_MS = 10000;
-const SPARK_POINTS = 30;
 const RING_CIRCUMFERENCE = 2 * Math.PI * 34;
 
 const $ = (id) => document.getElementById(id);
 
 const el = {
-  connectionDot: $("connectionDot"),
-  connectionStatus: $("connectionStatus"),
+  esp: $("esp"),
+  espText: $("esp-t"),
+  espState: $("espState"),
   temperature: $("temperature"),
   humidity: $("humidity"),
   rfidCount: $("rfidCount"),
@@ -40,7 +40,7 @@ const el = {
   ledLamp: $("ledLamp"),
   motionStatus: $("motionStatus"),
   motionIndicator: $("motionIndicator"),
-  historyBody: $("historyBody"),
+  log: $("log"),
   lastUpdated: $("lastUpdated"),
   clearHistory: $("clearHistory")
 };
@@ -63,10 +63,13 @@ function escapeHtml(value) {
   })[c]);
 }
 
-function setConnection(connected, message) {
-  el.connectionStatus.textContent = message;
-  el.connectionDot.classList.toggle("connected", connected);
-  el.connectionDot.classList.toggle("disconnected", !connected);
+// state: "ok" | "off" | "wait"
+function setConnection(state, message) {
+  el.esp.dataset.s = state;
+  el.espText.textContent = message;
+  el.espState.textContent = state === "ok" ? "Online" : state === "off" ? "Offline" : "Menunggu data";
+  el.espState.className = state === "ok" ? "" : state;
+  document.body.classList.toggle("offline", state === "off");
 }
 
 /* ---------- Grafik DHT22 (suhu + kelembapan) ---------- */
@@ -104,11 +107,25 @@ function setStats(prefix, vals, digits, unit) {
   ids[3].textContent = f(avg);
 }
 
+// Kurva halus (Catmull-Rom -> Bezier), y dibatasi agar tidak keluar area plot.
+function smoothPath(pts, yMin, yMax) {
+  const cl = (y) => Math.min(yMax, Math.max(yMin, y));
+  let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    const t = 0.35 / 3;
+    const c1x = p1[0] + (p2[0] - p0[0]) * t, c1y = cl(p1[1] + (p2[1] - p0[1]) * t);
+    const c2x = p2[0] - (p3[0] - p1[0]) * t, c2y = cl(p2[1] - (p3[1] - p1[1]) * t);
+    d += `C${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+
 function renderChart() {
   const W = Math.max(300, Math.round(chartSvg.getBoundingClientRect().width) || 640);
   chartWidth = W;
-  const H = W < 520 ? 240 : 290;
-  const L = 40, R = 40, T = 26, B = 30;
+  const H = W < 520 ? 176 : 168;
+  const L = 38, R = 38, T = 18, B = 26;
   chartSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
 
   const n = chartPoints.length;
@@ -129,34 +146,43 @@ function renderChart() {
   const yT = (v) => T + (1 - (v - tLo) / (tHi - tLo)) * plotH;
   const yH = (v) => T + (1 - (v - hLo) / (hHi - hLo)) * plotH;
 
-  let grid = `<text class="chart-text-temp" x="${L - 8}" y="12" text-anchor="end">°C</text>` +
-    `<text class="chart-text-hum" x="${W - R + 8}" y="12" text-anchor="start">%</text>`;
+  let grid = `<text class="unit-1" x="${L - 8}" y="9" text-anchor="end">°C</text>` +
+    `<text class="unit-2" x="${W - R + 8}" y="9" text-anchor="start">%</text>`;
   for (let i = 0; i <= 4; i++) {
     const yy = T + plotH * (1 - i / 4);
     grid += `<line class="chart-grid" x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}"/>`;
-    if (temps.length) grid += `<text class="chart-text-temp" x="${L - 8}" y="${yy + 4}" text-anchor="end">${tick(tLo + ((tHi - tLo) * i) / 4, tHi - tLo)}</text>`;
-    if (hums.length) grid += `<text class="chart-text-hum" x="${W - R + 8}" y="${yy + 4}" text-anchor="start">${tick(hLo + ((hHi - hLo) * i) / 4, hHi - hLo)}</text>`;
+    if (temps.length) grid += `<text class="chart-text" x="${L - 8}" y="${yy + 3.5}" text-anchor="end">${tick(tLo + ((tHi - tLo) * i) / 4, tHi - tLo)}</text>`;
+    if (hums.length) grid += `<text class="chart-text" x="${W - R + 8}" y="${yy + 3.5}" text-anchor="start">${tick(hLo + ((hHi - hLo) * i) / 4, hHi - hLo)}</text>`;
   }
 
-  const idx = n === 1 ? [0] : [0, Math.floor((n - 1) / 2), n - 1];
-  const anchors = n === 1 ? ["middle"] : ["start", "middle", "end"];
-  const xLabels = idx.map((ix, k) =>
-    `<text class="chart-text" x="${x(ix)}" y="${H - 8}" text-anchor="${anchors[k]}">${escapeHtml(chartPoints[ix].t)}</text>`
-  ).join("");
+  // label waktu sumbu X (3 label di layar kecil, 5 di layar lebar)
+  const labelCount = n === 1 ? 1 : (W < 520 ? 3 : 5);
+  const idx = labelCount === 1 ? [0]
+    : Array.from({ length: Math.min(labelCount, n) }, (_, k) => Math.round((k * (n - 1)) / (Math.min(labelCount, n) - 1)));
+  const xLabels = [...new Set(idx)].map((ix, k, arr) => {
+    const anchor = arr.length === 1 ? "middle" : k === 0 ? "start" : k === arr.length - 1 ? "end" : "middle";
+    return `<text class="chart-text" x="${x(ix)}" y="${H - 7}" text-anchor="${anchor}">${escapeHtml(chartPoints[ix].t)}</text>`;
+  }).join("");
 
-  const series = (key, y, cls) => {
-    let d = "", last = -1;
-    chartPoints.forEach((p, i) => {
-      if (p[key] === null) return;
-      d += `${d ? "L" : "M"}${x(i).toFixed(1)} ${y(p[key]).toFixed(1)} `;
-      last = i;
+  const baseY = T + plotH;
+  const series = (key, y, cls, withArea) => {
+    const pts = [];
+    chartPoints.forEach((p, i) => { if (p[key] !== null) pts.push([x(i), y(p[key])]); });
+    if (!pts.length) return "";
+    let out = "";
+    if (pts.length > 1) {
+      const d = smoothPath(pts, T, baseY);
+      if (withArea) out += `<path class="area-${cls}" d="${d}L${pts[pts.length - 1][0].toFixed(1)} ${baseY}L${pts[0][0].toFixed(1)} ${baseY}Z"/>`;
+      out += `<path class="chart-line line-${cls}" d="${d}"/>`;
+    }
+    const showAll = pts.length <= 30;
+    pts.forEach((p, i) => {
+      if (showAll || i === pts.length - 1) out += `<circle class="pt-${cls}" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3"/>`;
     });
-    if (last < 0) return "";
-    return `<path class="chart-line line-${cls}" d="${d.trim()}"/>` +
-      `<circle class="chart-dot dotfill-${cls}" cx="${x(last).toFixed(1)}" cy="${y(chartPoints[last][key]).toFixed(1)}" r="5"/>`;
+    return out;
   };
 
-  chartSvg.innerHTML = grid + xLabels + series("hum", yH, "hum") + series("temp", yT, "temp");
+  chartSvg.innerHTML = grid + xLabels + series("temp", yT, "1", true) + series("hum", yH, "2", false);
 }
 
 // Satu titik grafik per kiriman data ESP32.
@@ -178,40 +204,24 @@ if (typeof ResizeObserver !== "undefined") {
   }).observe(chartSvg.parentElement);
 }
 
-/* ---------- Riwayat ---------- */
+/* ---------- Riwayat (gaya log) ---------- */
 
-const ICON_OK = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#22c55e"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-const ICON_WARN = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#f5b50a"/><path d="M12 7v6" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="16.8" r="1.4" fill="#fff"/></svg>`;
-
-const ICON_DENY = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ef4444"/><path d="M8 8l8 8M16 8l-8 8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
-
-function toneFor(sensor, status) {
-  if (status === "Ditolak") return "tone-red";
-  const s = String(sensor).toLowerCase();
-  if (s === "pir") return "tone-amber";
-  if (s === "kipas" || s === "led") return "tone-cyan";
-  return "tone-green";
+// Berhasil -> INFO (biru), Aktif -> WARN (kuning), Ditolak -> ALERT (merah)
+function levelFor(status) {
+  if (status === "Ditolak") return "ALERT";
+  if (status === "Aktif") return "WARN";
+  return "INFO";
 }
 
 function renderHistory(history) {
   if (!Array.isArray(history) || history.length === 0) {
-    el.historyBody.innerHTML =
-      `<tr><td colspan="4" class="empty-row">Belum ada riwayat aktivitas.</td></tr>`;
+    el.log.innerHTML = `<li class="kosong">Belum ada riwayat aktivitas.</li>`;
     return;
   }
 
-  el.historyBody.innerHTML = history.slice(-30).reverse().map((item) => {
-    const warn = item.status === "Aktif";
-    const deny = item.status === "Ditolak";
-    const icon = deny ? ICON_DENY : (warn ? ICON_WARN : ICON_OK);
-    return `
-      <tr class="${toneFor(item.sensor, item.status)}">
-        <td>${escapeHtml(item.time)}</td>
-        <td>${escapeHtml(item.sensor)}</td>
-        <td>${escapeHtml(item.activity)}</td>
-        <td><span class="status-tag">${icon}${escapeHtml(item.status)}</span></td>
-      </tr>`;
-  }).join("");
+  el.log.innerHTML = history.slice(-30).reverse().map((item) =>
+    `<li><time>[${escapeHtml(item.time)}]</time><b class="lv ${levelFor(item.status)}">[${escapeHtml(item.sensor)}]</b><span>${escapeHtml(item.activity)}</span></li>`
+  ).join("");
 }
 
 // Riwayat dibuat di browser dari perubahan data (ESP32 belum mengirim history).
@@ -255,7 +265,9 @@ function trackChanges(data) {
 /* ---------- Putaran kipas (mengikuti kipas fisik) ---------- */
 
 const fanBlades = el.fanArt.querySelector(".fan-blades");
-const FAN_MAX_SPEED = 900;   // derajat per detik (kecepatan penuh)
+const FAN_MAX_SPEED = 1200;   // derajat per detik (kecepatan penuh; jangan di atas 3000)
+const FAN_SPIN_UP = 2;        // makin besar = makin cepat mencapai kecepatan penuh
+const FAN_SPIN_DOWN = 1.2;    // makin kecil = makin lama berhenti
 let fanAngle = 0;
 let fanSpeed = 0;
 let fanTarget = 0;
@@ -267,7 +279,7 @@ function fanLoop(ts) {
   fanLastTs = ts;
 
   // naik cepat saat dinyalakan, melambat pelan saat dimatikan
-  const easing = fanTarget > fanSpeed ? 3 : 1.2;
+  const easing = fanTarget > fanSpeed ? FAN_SPIN_UP : FAN_SPIN_DOWN;
   fanSpeed += (fanTarget - fanSpeed) * Math.min(1, easing * dt);
   if (fanTarget === 0 && fanSpeed < 2) fanSpeed = 0;
 
@@ -312,14 +324,12 @@ function updateDashboard(data) {
 
   if (data.temperature !== undefined) {
     const t = Number(data.temperature);
-    el.temperature.innerHTML = Number.isFinite(t)
-      ? `${t.toFixed(1)}<small>°C</small>` : `--.-<small>°C</small>`;
+    el.temperature.textContent = Number.isFinite(t) ? t.toFixed(1) : "--.-";
   }
 
   if (data.humidity !== undefined) {
     const h = Number(data.humidity);
-    el.humidity.innerHTML = Number.isFinite(h)
-      ? `${Math.round(h)}<small>%</small>` : `--<small>%</small>`;
+    el.humidity.textContent = Number.isFinite(h) ? String(Math.round(h)) : "--";
   }
 
   if (data.rfidCount !== undefined) el.rfidCount.textContent = String(data.rfidCount);
@@ -328,24 +338,24 @@ function updateDashboard(data) {
 
   if (data.fan !== undefined) {
     const on = toBool(data.fan);
-    setIndicator(el.fanLamp, el.fanStatus, on, "AKTIF", "MATI");
+    setIndicator(el.fanLamp, el.fanStatus, on, "Berputar", "Berhenti");
     el.fanArt.classList.toggle("on", on);
     setFanSpinning(on);
   }
 
   if (data.led !== undefined) {
     const on = toBool(data.led);
-    setIndicator(el.ledLamp, el.ledStatus, on, "HIDUP", "MATI");
+    setIndicator(el.ledLamp, el.ledStatus, on, "Menyala", "Mati");
   }
 
   if (data.motion !== undefined) {
     const detected = toBool(data.motion);
-    el.motionStatus.textContent = detected ? "Ada Gerakan!" : "Tidak ada gerakan";
+    el.motionStatus.textContent = detected ? "Ada gerakan!" : "Tidak ada gerakan";
     el.motionStatus.classList.toggle("warn", detected);
     el.motionIndicator.classList.toggle("on", detected);
   }
 
-  el.lastUpdated.textContent = `Diperbarui ${new Date().toLocaleTimeString("id-ID")}`;
+  el.lastUpdated.textContent = new Date().toLocaleTimeString("id-ID");
 }
 
 /* ---------- Firebase ---------- */
@@ -359,7 +369,7 @@ function startListening() {
     if (data.updatedAt !== lastUpdatedAtValue) {
       lastUpdatedAtValue = data.updatedAt;
       lastChangeLocal = Date.now();
-      setConnection(true, "ESP32 Online");
+      setConnection("ok", "ESP32 Online");
       pushChartPoint(data);
     }
 
@@ -371,22 +381,19 @@ function startListening() {
     }
   }, (error) => {
     console.error("Gagal membaca Firebase:", error);
-    setConnection(false, "Gagal membaca Firebase");
+    setConnection("off", "Gagal membaca Firebase");
   });
 
   setInterval(() => {
     if (lastChangeLocal && Date.now() - lastChangeLocal > OFFLINE_AFTER_MS) {
-      setConnection(false, "ESP32 Offline");
+      setConnection("off", "ESP32 Offline");
     }
   }, 1000);
 }
 
 el.clearHistory.addEventListener("click", () => {
   localHistory.length = 0;
-  el.historyBody.innerHTML = `
-    <tr><td colspan="4" class="empty-row">
-      Tampilan riwayat dikosongkan. Data di Firebase tidak dihapus.
-    </td></tr>`;
+  el.log.innerHTML = `<li class="kosong">Tampilan riwayat dikosongkan. Data di Firebase tidak dihapus.</li>`;
 });
 
 /* ---------- Tanggal & jam ---------- */
@@ -407,39 +414,37 @@ function updateDateTime() {
 updateDateTime();
 setInterval(updateDateTime, 1000);
 
-/* ---------- Mode gelap / terang ---------- */
+/* ---------- Tema gelap / terang & navigasi ---------- */
 
-const themeToggle = $("themeToggle");
+const temaBtn = $("tema");
 const themeMeta = document.querySelector('meta[name="theme-color"]');
 
-function currentTheme() {
-  return document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+function setTema(t) {
+  document.documentElement.dataset.tema = t;
+  try { localStorage.setItem("tema", t); } catch (e) { }
+  temaBtn.innerHTML = `<svg class="ic"><use href="#${t === "gelap" ? "i-sun" : "i-moon"}"/></svg>`;
+  const next = t === "gelap" ? "terang" : "gelap";
+  temaBtn.setAttribute("aria-label", `Ganti ke mode ${next}`);
+  temaBtn.setAttribute("title", `Ganti ke mode ${next}`);
+  if (themeMeta) themeMeta.setAttribute("content", t === "gelap" ? "#0D1218" : "#E8F1F7");
 }
 
-function applyTheme(theme) {
-  document.documentElement.setAttribute("data-theme", theme);
-  if (themeMeta) themeMeta.setAttribute("content", theme === "dark" ? "#0b1020" : "#f6f8fe");
-  const next = theme === "dark" ? "terang" : "gelap";
-  themeToggle.setAttribute("aria-label", `Ganti ke mode ${next}`);
-  themeToggle.setAttribute("title", `Ganti ke mode ${next}`);
-}
+temaBtn.onclick = () => setTema(document.documentElement.dataset.tema === "gelap" ? "terang" : "gelap");
+setTema(document.documentElement.dataset.tema === "terang" ? "terang" : "gelap");
 
-applyTheme(currentTheme());
-
-themeToggle.addEventListener("click", () => {
-  const next = currentTheme() === "dark" ? "light" : "dark";
-  applyTheme(next);
-  try { localStorage.setItem("theme", next); } catch (e) { }
-});
+document.querySelectorAll(".side nav a").forEach((a) => a.addEventListener("click", () => {
+  document.querySelectorAll(".side nav a").forEach((x) => x.classList.remove("act"));
+  a.classList.add("act");
+}));
 
 /* ---------- Mulai ---------- */
 
-setConnection(false, "Menghubungkan...");
+setConnection("wait", "Menghubungkan...");
 renderChart();
 
 signInAnonymously(auth)
   .then(startListening)
   .catch((error) => {
     console.error("Anonymous sign-in gagal:", error);
-    setConnection(false, "Login Firebase gagal");
+    setConnection("off", "Login Firebase gagal");
   });
