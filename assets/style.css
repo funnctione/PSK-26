@@ -1528,3 +1528,9 @@ h2 .ic {
   --hero-cahaya: rgba(45, 57, 68, 0.18);
   --hero-cincin: rgba(110, 168, 224, .10);
 }
+
+@media (max-width: 760px) {
+  .side .logo {
+    display: none
+  }
+}
